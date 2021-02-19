@@ -229,9 +229,6 @@ def main():
         # Get the feature matrix and class list from a .dat file
         features, class_list = generate_data("iris_train.dat")
 
-        mini_features, mini_class_list, validation_features, validation_class_list = create_mini_batch(features,
-                                                                                                       class_list)
-
         # Calculate the number of different classes in the class list
         num_classes = get_num_classes(class_list)
         num_nodes = 6
@@ -245,11 +242,11 @@ def main():
         bias_hidden = np.array(np.random.rand(1, num_classes))
 
         # Calculate one hot encoded matrix
-        one_hot_encoded = one_hot_encoding(mini_class_list, num_classes)
+        one_hot_encoded = one_hot_encoding(class_list, num_classes)
 
         # Use gradient descent to find the optimal weights, bias, and cost histories using 2 methods
         optimal_weights, optimal_bias, optimal_weights_hidden, optimal_bias_hidden, cost_history = \
-            gradient_descent(mini_features, one_hot_encoded, weights_input, bias_input, weights_hidden, bias_hidden, 0.01,
+            gradient_descent(features, one_hot_encoded, weights_input, bias_input, weights_hidden, bias_hidden, 0.01,
                              60000)
 
         model = Optimal_Parameters(optimal_weights, optimal_bias, optimal_weights_hidden, optimal_bias_hidden)
@@ -262,22 +259,6 @@ def main():
         plt.xlabel("Iterations")
         plt.ylabel("Cost")
         plt.title("Cost History")
-
-        one_hot_encoded = one_hot_encoding(validation_class_list, num_classes)
-
-        optimal_weights, optimal_bias, optimal_weights_hidden, optimal_bias_hidden, cost_history = \
-            gradient_descent(validation_features, one_hot_encoded, weights_input, bias_input, weights_hidden, bias_hidden,
-                             0.01,
-                             60000)
-
-        # Plot the cost histories obtained from both methods
-        plt.figure(1)
-        plt.plot(range(len(cost_history)), cost_history, "r")
-        plt.xlabel("Iterations")
-        plt.ylabel("Cost")
-        plt.title("Cost History")
-        plt.legend(["Training Loss", "Validation Loss"])
-        plt.show()
 
     elif sys.argv[1] == "predict":
         # Read features and corresponding class values from .dat file
