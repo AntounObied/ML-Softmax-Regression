@@ -139,16 +139,6 @@ def gradient_descent(features, one_hot_encoded, weights_input, bias_input, weigh
     # List of all calculated costs
     cost_history = []
 
-    # List of all estimated costs using secant approximation
-    cost_estimate_history = []
-
-    # Weight that is estimated using secant approximation
-    input_weight_estimate = weights_input
-    input_bias_estimate = bias_input
-
-    hidden_weight_estimate = weights_hidden
-    hidden_bias_estimate = bias_hidden
-
     class_list = one_hot_encoded.argmax(axis=1)
 
     for i in range(max_iterations):
@@ -179,23 +169,11 @@ def gradient_descent(features, one_hot_encoded, weights_input, bias_input, weigh
         weights_hidden -= learning_rate * hidden_weight_gradient
         bias_hidden -= learning_rate * hidden_bias_gradient
 
-        # Estimate the gradient using secant approximation
-        gradient_estimate = cost_derivative_estimate(hidden_results, 0.001, class_list)
-
-        # Calculate the weight from the estimated gradient
-        input_weight_estimate -= learning_rate * gradient_estimate
-        input_bias_estimate -= learning_rate * gradient_estimate
-
-        hidden_weight_estimate -= learning_rate * gradient_estimate
-        hidden_bias_estimate -= learning_rate * gradient_estimate
-
         # Calculate the cost using the modified weight, and the estimated weight using secant approximation, and append
         # them to separate lists
         cost_history.append(cost_function(hidden_results, class_list))
-        cost_estimate_history.append(cost_function(hidden_results, class_list))
 
-    return weights_input, bias_input, weights_hidden, bias_hidden, cost_history, \
-           cost_estimate_history, input_weight_estimate, input_bias_estimate, hidden_weight_estimate, hidden_bias_estimate
+    return weights_input, bias_input, weights_hidden, bias_hidden, cost_history
 
 
 def get_predictions(softmax_matrix):
@@ -270,57 +248,9 @@ def main():
         one_hot_encoded = one_hot_encoding(mini_class_list, num_classes)
 
         # Use gradient descent to find the optimal weights, bias, and cost histories using 2 methods
-        optimal_weights, optimal_bias, optimal_weights_hidden, optimal_bias_hidden, cost_history, cost_estimates, \
-        weight_estimate, bias_estimate, hidden_weight_estimate, hidden_bias_estimate = \
+        optimal_weights, optimal_bias, optimal_weights_hidden, optimal_bias_hidden, cost_history = \
             gradient_descent(mini_features, one_hot_encoded, weights_input, bias_input, weights_hidden, bias_hidden, 0.01,
                              60000)
-
-        # Check if optimal weights match with weights estimated using secant approximation
-        optimal_vs_estimates = abs(optimal_weights - weight_estimate)
-        bias_comparison = abs(optimal_bias - bias_estimate)
-
-        check_matrix = [[], [], [], []]
-        bias_check = []
-
-        for i in range(len(optimal_vs_estimates)):
-            for j in range(len(optimal_vs_estimates[i])):
-                if optimal_vs_estimates[i][j] <= 0.0001:
-                    check_matrix[i].append("CORRECT")
-                else:
-                    check_matrix[i].append("WRONG")
-
-        for i in range(len(bias_comparison[0])):
-            if bias_comparison[0][i] <= 0.0001:
-                bias_check.append("CORRECT")
-            else:
-                bias_check.append("WRONG")
-
-        print("Optimal Input weights vs Estimated Input weights:\n ", check_matrix)
-
-        print("Optimal Input Bias vs Estimated Input Bias:\n ", bias_check)
-
-        hidden_optimal_vs_estimates = abs(optimal_weights_hidden - hidden_weight_estimate)
-        hidden_bias_comparison = abs(optimal_bias_hidden - hidden_bias_estimate)
-
-        check_matrix = [[], [], [], [], [], []]
-        bias_check = []
-
-        for i in range(len(hidden_optimal_vs_estimates)):
-            for j in range(len(hidden_optimal_vs_estimates[i])):
-                if hidden_optimal_vs_estimates[i][j] <= 0.0001:
-                    check_matrix[i].append("CORRECT")
-                else:
-                    check_matrix[i].append("WRONG")
-
-        for i in range(len(hidden_bias_comparison[0])):
-            if hidden_bias_comparison[0][i] <= 0.0001:
-                bias_check.append("CORRECT")
-            else:
-                bias_check.append("WRONG")
-
-        print("Optimal Hidden weights vs Estimated Hidden weights:\n ", check_matrix)
-
-        print("Optimal Hidden Bias vs Hidden Estimated Bias:\n ", bias_check)
 
         model = Optimal_Parameters(optimal_weights, optimal_bias, optimal_weights_hidden, optimal_bias_hidden)
 
@@ -333,21 +263,9 @@ def main():
         plt.ylabel("Cost")
         plt.title("Cost History")
 
-        plt.figure(2)
-        plt.plot(range(len(cost_estimates)), cost_estimates)
-        plt.xlabel("Iterations")
-        plt.ylabel("Cost")
-        plt.title("Cost History Using Secant Approximation")
-
-        # Calculate logits and probability matrix of the validation set
-        net_inputs_mini = logit_score_matrix(validation_features, optimal_weights, optimal_bias)
-        sigmoid_validation = sigmoid(net_inputs_mini)
-        smax_validation = softmax(logit_score_matrix(sigmoid_validation, optimal_weights_hidden, optimal_bias_hidden))
-
         one_hot_encoded = one_hot_encoding(validation_class_list, num_classes)
 
-        optimal_weights, optimal_bias, optimal_weights_hidden, optimal_bias_hidden, cost_history, cost_estimates, \
-        weight_estimate, bias_estimate, hidden_weight_estimate, hidden_bias_estimate = \
+        optimal_weights, optimal_bias, optimal_weights_hidden, optimal_bias_hidden, cost_history = \
             gradient_descent(validation_features, one_hot_encoded, weights_input, bias_input, weights_hidden, bias_hidden,
                              0.01,
                              60000)
@@ -359,21 +277,7 @@ def main():
         plt.ylabel("Cost")
         plt.title("Cost History")
         plt.legend(["Training Loss", "Validation Loss"])
-
-        plt.figure(2)
-        plt.plot(range(len(cost_estimates)), cost_estimates, "r")
-        plt.xlabel("Iterations")
-        plt.ylabel("Cost")
-        plt.title("Cost History Using Secant Approximation")
-        plt.legend(["Training Loss", "Validation Loss"])
         plt.show()
-
-        # Use the validation set to make predictions
-        validation_predictions = get_predictions(smax_validation)
-        print("Validation Predictions: ", validation_predictions)
-
-        # Calculate and display the validation accuracy
-        print("Validation Accuracy: ", calculate_accuracy(validation_predictions, validation_class_list) * 100, "%")
 
     elif sys.argv[1] == "predict":
         # Read features and corresponding class values from .dat file
